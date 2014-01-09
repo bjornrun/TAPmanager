@@ -70,19 +70,18 @@ func allocateHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("alloc name = %s\n", name)
 	for i, line := range allocNames {
 		if (line == name) {
-	   	 fmt.Fprintf(w, "Tap:%s Ip:%s , %s Found at %d == %s", tapNames[i], ipAddr[i], name, i, line)
-		return
-			
+		    fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
+			return		
 		}
   	}
 	for i, line := range allocNames {
 		if (line == "") {
 			if (i >= *numtap) {
-				fmt.Fprintf(w, "<h1>Full</h1>")
+				fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
 				return
 			} else
 			{
-			    fmt.Fprintf(w, "<h1>Allocating %s</h1>", name)
+			    fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
 				allocNames[i] = name
 				cmds[i] = exec.Command(*tapdaemon, tapNames[i], fmt.Sprintf("%d", port2tap[i]))
 				cmds[i].Start()
@@ -90,7 +89,7 @@ func allocateHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
   	}
-	fmt.Fprintf(w, "<h1>Full</h1>")
+	fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
 }
 
 func removeHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +98,7 @@ func removeHandler(w http.ResponseWriter, r *http.Request) {
 
 	for i, line := range allocNames {
 		if (line == name) {
-	   	 fmt.Fprintf(w, "Removed Tap:%s Ip:%s , %s Found at %d == %s", tapNames[i], ipAddr[i], name, i, line)
+	   	 fmt.Fprintf(w, "{\"Status\":\"OK\"}")
 			allocNames[i] = ""
 			fmt.Printf("removed\n")
 			if (cmds[i] != nil) {
@@ -112,7 +111,7 @@ func removeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		
   	}
-    fmt.Fprintf(w, "<h1>not found %s</h1>", name)
+    fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 }
 
 func portHandler(w http.ResponseWriter, r *http.Request) {
@@ -120,11 +119,11 @@ func portHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("port name = %s\n", name)
 		for i, line := range allocNames {
 		if (line == name) {
-			fmt.Fprintf(w,"%d\n",port2tap[i])
+			fmt.Fprintf(w, "{\"Port\":%d, \"Status\":\"OK\"}\n", port2tap[i])
 			return
 		}
 		}
-	fmt.Fprintf(w,"Not found")
+   fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 }
 
 func ipHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,18 +131,18 @@ func ipHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("ip name = %s\n", name)
 		for i, line := range allocNames {
 		if (line == name) {
-			fmt.Fprintf(w,"%s\n",ipAddr[i])
+			    fmt.Fprintf(w, "{\"Ip\":\"%s\",\"Status\":\"OK\"}\n", ipAddr[i])
 			return
 		}
 		}
-	fmt.Fprintf(w,"Not found")
+    fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	for i, line := range allocNames {
 		if (line != "") {
-		fmt.Fprintf(w,"%s: port:%d ip:%s   <br/>\n", line, port2tap[i], ipAddr[i])	
+		    fmt.Fprintf(w, "{\"Name\":\"%s\", \"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n",line, tapNames[i], ipAddr[i], port2tap[i])
 		}
 		
 	}
