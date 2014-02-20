@@ -25,23 +25,23 @@ THE SOFTWARE.
 package main
 
 import (
-    "fmt"
-    "net/http"
-	"flag"
-	"os"
-	"os/exec"
-	"github.com/stvp/go-toml-config"
+  "fmt"
+  "net/http"
+  "flag"
+  "os"
+  "os/exec"
+  "github.com/stvp/go-toml-config"
 )
 
 var (
-	tapname            = config.String("tapname", "tap")
-	numtap           = config.Int("numtap", 1)
-	starttap           = config.Int("starttap", 0)
-	startport		= config.Int("startport", 50025)
-	startip     = config.String("startip", "10.0.1.136")
-	stepip           = config.Int("stepip", 4)
-	tapdaemon  = config.String("tapdaemon", "./tapdaemon")
-	listen  = config.String("listen", "localhost:18080")
+  tapname            = config.String("tapname", "tap")
+  numtap           = config.Int("numtap", 1)
+  starttap           = config.Int("starttap", 0)
+  startport    = config.Int("startport", 50025)
+  startip     = config.String("startip", "10.0.1.136")
+  stepip           = config.Int("stepip", 4)
+  tapdaemon  = config.String("tapdaemon", "./tapdaemon")
+  listen  = config.String("listen", "localhost:18080")
 
 )
 
@@ -50,136 +50,136 @@ var cfgFile string
 var verbose bool
 var cmds [256]*exec.Cmd
 var allocNames [256]string
-var tapNames	[256]string
-var ipAddr		[256]string
-var port2tap	[256]int
+var tapNames  [256]string
+var ipAddr    [256]string
+var port2tap  [256]int
 
 var Usage = func() {
-    fmt.Fprintf(os.Stderr, "Usage of %s\n", os.Args[0])
-    flag.PrintDefaults()
-	fmt.Fprintf(os.Stderr,"\nWeb commands:\nhttp://%s/allocate/<signum>_<instance> - allocate a free port -> assigned IP address\n",*listen)
-	fmt.Fprintf(os.Stderr,"http://%s/remove/<signum>_<instance> - remove an allocated port\n",*listen)
-	fmt.Fprintf(os.Stderr,"http://%s/port/<signum>_<instance> Show port\n",*listen)
-	fmt.Fprintf(os.Stderr,"http://%s/ip/<signum>_<instance> Show IP address\n",*listen)
-	fmt.Fprintf(os.Stderr,"http://%s/list - list allocated ports\n",*listen)
-	fmt.Fprintf(os.Stderr,"Example of tapmanager.cfg:\ntapname=\"tap\"\nnumtap=1\nstarttap=0\nstartip=\"10.1.1.4\"\nstepip=4\ntapdaemon=\"./tapdaemon\"\nlisten=\"127.0.0.1:18080\"\n")
+  fmt.Fprintf(os.Stderr, "Usage of %s\n", os.Args[0])
+  flag.PrintDefaults()
+  fmt.Fprintf(os.Stderr,"\nWeb commands:\nhttp://%s/allocate/<signum>_<instance> - allocate a free port -> assigned IP address\n",*listen)
+  fmt.Fprintf(os.Stderr,"http://%s/remove/<signum>_<instance> - remove an allocated port\n",*listen)
+  fmt.Fprintf(os.Stderr,"http://%s/port/<signum>_<instance> Show port\n",*listen)
+  fmt.Fprintf(os.Stderr,"http://%s/ip/<signum>_<instance> Show IP address\n",*listen)
+  fmt.Fprintf(os.Stderr,"http://%s/list - list allocated ports\n",*listen)
+  fmt.Fprintf(os.Stderr,"Example of tapmanager.cfg:\ntapname=\"tap\"\nnumtap=1\nstarttap=0\nstartip=\"10.1.1.4\"\nstepip=4\ntapdaemon=\"./tapdaemon\"\nlisten=\"127.0.0.1:18080\"\n")
 }
 
 func allocateHandler(w http.ResponseWriter, r *http.Request) {
-    name := r.URL.Path[len("/allocate/"):]
-	fmt.Printf("alloc name = %s\n", name)
-	for i, line := range allocNames {
-		if (line == name) {
-		    fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
-			return		
-		}
-  	}
-	for i, line := range allocNames {
-		if (line == "") {
-			if (i >= *numtap) {
-				fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
-				return
-			} else
-			{
-			    fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
-				allocNames[i] = name
-				cmds[i] = exec.Command(*tapdaemon, tapNames[i], fmt.Sprintf("%d", port2tap[i]))
-				cmds[i].Start()
-				return				
-			}
-		}
-  	}
-	fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
+  name := r.URL.Path[len("/allocate/"):]
+  fmt.Printf("alloc name = %s\n", name)
+  for i, line := range allocNames {
+    if (line == name) {
+      fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
+      return    
+    }
+  }
+  for i, line := range allocNames {
+    if (line == "") {
+      if (i >= *numtap) {
+        fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
+        return
+      } else
+      {
+        fmt.Fprintf(w, "{\"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n", tapNames[i], ipAddr[i], port2tap[i])
+        allocNames[i] = name
+        cmds[i] = exec.Command(*tapdaemon, tapNames[i], fmt.Sprintf("%d", port2tap[i]))
+        cmds[i].Start()
+        return        
+      }
+    }
+  }
+  fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Full\"}\n")
 }
 
 func removeHandler(w http.ResponseWriter, r *http.Request) {
-    name := r.URL.Path[len("/remove/"):]
-		fmt.Printf("remove name = %s\n", name)
+  name := r.URL.Path[len("/remove/"):]
+  fmt.Printf("remove name = %s\n", name)
 
-	for i, line := range allocNames {
-		if (line == name) {
-	   	 fmt.Fprintf(w, "{\"Status\":\"OK\"}")
-			allocNames[i] = ""
-			fmt.Printf("removed\n")
-			if (cmds[i] != nil) {
-				cmds[i].Process.Kill()
-				cmds[i].Wait()
-				cmds[i] = nil
-			}
-		return
-			
-		}
-		
-  	}
-    fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
+  for i, line := range allocNames {
+    if (line == name) {
+      fmt.Fprintf(w, "{\"Status\":\"OK\"}")
+      allocNames[i] = ""
+      fmt.Printf("removed\n")
+      if (cmds[i] != nil) {
+        cmds[i].Process.Kill()
+        cmds[i].Wait()
+        cmds[i] = nil
+      }
+      return
+
+    }
+
+  }
+  fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 }
 
 func portHandler(w http.ResponseWriter, r *http.Request) {
-    name := r.URL.Path[len("/port/"):]
-		fmt.Printf("port name = %s\n", name)
-		for i, line := range allocNames {
-		if (line == name) {
-			fmt.Fprintf(w, "{\"Port\":%d, \"Status\":\"OK\"}\n", port2tap[i])
-			return
-		}
-		}
-   fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
+  name := r.URL.Path[len("/port/"):]
+  fmt.Printf("port name = %s\n", name)
+  for i, line := range allocNames {
+    if (line == name) {
+      fmt.Fprintf(w, "{\"Port\":%d, \"Status\":\"OK\"}\n", port2tap[i])
+      return
+    }
+  }
+  fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 }
 
 func ipHandler(w http.ResponseWriter, r *http.Request) {
-    name := r.URL.Path[len("/ip/"):]
-		fmt.Printf("ip name = %s\n", name)
-		for i, line := range allocNames {
-		if (line == name) {
-			    fmt.Fprintf(w, "{\"Ip\":\"%s\",\"Status\":\"OK\"}\n", ipAddr[i])
-			return
-		}
-		}
-    fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
+  name := r.URL.Path[len("/ip/"):]
+  fmt.Printf("ip name = %s\n", name)
+  for i, line := range allocNames {
+    if (line == name) {
+      fmt.Fprintf(w, "{\"Ip\":\"%s\",\"Status\":\"OK\"}\n", ipAddr[i])
+      return
+    }
+  }
+  fmt.Fprintf(w, "{\"Status\":\"FAIL\", \"Reason\":\"Not found\"}\n")
 
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
-	for i, line := range allocNames {
-		if (line != "") {
-		    fmt.Fprintf(w, "{\"Name\":\"%s\", \"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n",line, tapNames[i], ipAddr[i], port2tap[i])
-		}
-		
-	}
+  for i, line := range allocNames {
+    if (line != "") {
+      fmt.Fprintf(w, "{\"Name\":\"%s\", \"Tap\":\"%s\", \"Ip\":\"%s\", \"Port\":%d, \"Status\":\"OK\"}\n",line, tapNames[i], ipAddr[i], port2tap[i])
+    }
+
+  }
 }
 
 
 func main() {
-	flag.StringVar(&cfgFile, "c", "tapmanager.cfg", "TAPmanager config setup file")
-	flag.BoolVar(&verbose,"v", false, "Verbose")
-	
-	flag.Usage = Usage
-    flag.Parse()
-	
-	if err := config.Parse(cfgFile); err != nil {
-		panic(err)
-	}
-	
-	if  verbose {
-		fmt.Printf("TAPmanager\n")
-	}
-	
-	var ip [4]int
-	_, err := fmt.Sscanf(*startip, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3])
-    if err != nil {
-        panic(err)
-    }
-	
-	for i := 0; i < maxTap; i++ {
-		tapNames[i] = fmt.Sprintf("%s%1d",*tapname,*starttap+i)
-		ipAddr[i] = fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]+i*(*stepip))
-		port2tap[i] = *startport + i
-	}
-	
-	http.HandleFunc("/allocate/", allocateHandler)
-    http.HandleFunc("/remove/", removeHandler)
-    http.HandleFunc("/list/", listHandler)
-    http.HandleFunc("/ip/", ipHandler)
-    http.HandleFunc("/port/", portHandler)
-    http.ListenAndServe(*listen, nil)
+  flag.StringVar(&cfgFile, "c", "tapmanager.cfg", "TAPmanager config setup file")
+  flag.BoolVar(&verbose,"v", false, "Verbose")
+
+  flag.Usage = Usage
+  flag.Parse()
+
+  if err := config.Parse(cfgFile); err != nil {
+    panic(err)
+  }
+
+  if  verbose {
+    fmt.Printf("TAPmanager\n")
+  }
+
+  var ip [4]int
+  _, err := fmt.Sscanf(*startip, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3])
+  if err != nil {
+    panic(err)
+  }
+
+  for i := 0; i < maxTap; i++ {
+    tapNames[i] = fmt.Sprintf("%s%1d",*tapname,*starttap+i)
+    ipAddr[i] = fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]+i*(*stepip))
+    port2tap[i] = *startport + i
+  }
+
+  http.HandleFunc("/allocate/", allocateHandler)
+  http.HandleFunc("/remove/", removeHandler)
+  http.HandleFunc("/list/", listHandler)
+  http.HandleFunc("/ip/", ipHandler)
+  http.HandleFunc("/port/", portHandler)
+  http.ListenAndServe(*listen, nil)
 }
