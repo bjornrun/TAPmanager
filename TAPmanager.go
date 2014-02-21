@@ -65,6 +65,23 @@ var Usage = func() {
   fmt.Fprintf(os.Stderr,"Example of tapmanager.cfg:\ntapname=\"tap\"\nnumtap=1\nstarttap=0\nstartip=\"10.1.1.4\"\nstepip=4\ntapdaemon=\"./tapdaemon\"\nlisten=\"127.0.0.1:18080\"\n")
 }
 
+func execWatch(i int, cmd *exec.Cmd) {
+	donec := make(chan error, 1)
+	go func() {
+		donec <- cmd.Wait()
+	}()
+	select {
+//	case <-time.After(3 * time.Second):
+//		cmd.Process.Kill()
+//		fmt.Println("timeout")
+	case <-donec:
+		fmt.Println("done and removed")
+		if (cmds[i] != nil) {
+        cmds[i] = nil
+      }
+	}
+}
+
 func allocateHandler(w http.ResponseWriter, r *http.Request) {
   name := r.URL.Path[len("/allocate/"):]
   fmt.Printf("alloc name = %s\n", name)
@@ -85,6 +102,7 @@ func allocateHandler(w http.ResponseWriter, r *http.Request) {
         allocNames[i] = name
         cmds[i] = exec.Command(*tapdaemon, tapNames[i], fmt.Sprintf("%d", port2tap[i]))
         cmds[i].Start()
+		execWatch(i, cmds[i])
         return        
       }
     }
