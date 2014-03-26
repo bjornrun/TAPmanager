@@ -102,7 +102,7 @@ func allocateHandler(w http.ResponseWriter, r *http.Request) {
         allocNames[i] = name
         cmds[i] = exec.Command(*tapdaemon, tapNames[i], fmt.Sprintf("%d", port2tap[i]))
         cmds[i].Start()
-		execWatch(i, cmds[i])
+		go execWatch(i, cmds[i])
         return        
       }
     }
