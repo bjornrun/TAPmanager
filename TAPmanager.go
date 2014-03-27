@@ -76,6 +76,7 @@ func execWatch(i int, cmd *exec.Cmd) {
 //		fmt.Println("timeout")
 	case <-donec:
 		fmt.Println("done and removed")
+		allocNames[i] = ""
 		if (cmds[i] != nil) {
         cmds[i] = nil
       }
